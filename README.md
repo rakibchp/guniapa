@@ -12,7 +12,7 @@ Guniapa is a planned service marketplace that connects people and organizations 
 Project status: In development / concept-to-MVP. Features described here are planned and should not be interpreted as already live.
 
 Website: https://guniapa.com
-Repository: guniap
+Repository: guniapa
 Initial market: Bangladesh, with an architecture that can expand to additional regions.
 The problem
 Finding reliable help for a specific task, at a suitable time and location, can be difficult. Skilled workers may also struggle to find customers, build a trusted reputation, and receive fair, predictable work opportunities.
@@ -119,7 +119,9 @@ Phase 4 — Scale when evidence supports it
 - Observability, load testing, database tuning and read replicas if needed
 - Separate services only where team ownership, deployment needs or measured bottlenecks justify it
 - Consider Kafka for durable event streams and Kubernetes when operational scale warrants its complexity
-Contributing
+### -Contributing
+
 Contributions should include a clear problem statement, tests for behavior changes, documentation updates where appropriate, and no secrets or real customer data in commits. Use environment variables or a secret manager for credentials. Follow the repository's contribution and code-review rules as they are added.
-Disclaimer
-Guniapa is a planned marketplace concept. Availability, identity checks, payments, maps, provider credentials, ratings, media uploads and other capabilities must be implemented, tested and reviewed before being represented as operational. The platform should launch only after legal, safety, privacy and payment requirements for its target markets have been reviewed.
+### - Disclaimer
+
+*Guniapa is a planned marketplace concept. Availability, identity checks, payments, maps, provider credentials, ratings, media uploads and other capabilities must be implemented, tested and reviewed before being represented as operational. The platform should launch only after legal, safety, privacy and payment requirements for its target markets have been reviewed.
