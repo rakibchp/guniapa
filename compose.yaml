@@ -1,0 +1,174 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:?Set DB_NAME}
+      POSTGRES_USER: ${DB_USER:?Set DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set a unique DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - data
+
+  cache:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - data
+
+  release:
+    build:
+      context: ./backend
+    command: sh -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput"
+    environment: &backend_environment
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY}
+      DEBUG: ${DEBUG:-false}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?Set explicit ALLOWED_HOSTS}
+      DB_NAME: ${DB_NAME:?Set DB_NAME}
+      DB_USER: ${DB_USER:?Set DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_CONN_MAX_AGE: ${DB_CONN_MAX_AGE:-60}
+      DB_SSLMODE: ${DB_SSLMODE:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+      SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-true}
+      TRUST_X_FORWARDED_PROTO: ${TRUST_X_FORWARDED_PROTO:-true}
+      SECURE_HSTS_SECONDS: ${SECURE_HSTS_SECONDS:-31536000}
+      SECURE_HSTS_INCLUDE_SUBDOMAINS: ${SECURE_HSTS_INCLUDE_SUBDOMAINS:-false}
+      SECURE_HSTS_PRELOAD: ${SECURE_HSTS_PRELOAD:-false}
+      API_PAGE_SIZE: ${API_PAGE_SIZE:-20}
+      API_ANON_RATE: ${API_ANON_RATE:-60/hour}
+      API_USER_RATE: ${API_USER_RATE:-300/hour}
+      AUTH_LOGIN_RATE: ${AUTH_LOGIN_RATE:-10/hour}
+      AUTH_REGISTER_RATE: ${AUTH_REGISTER_RATE:-5/hour}
+      AUTH_OTP_RATE: ${AUTH_OTP_RATE:-5/hour}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - staticfiles:/app/staticfiles
+    restart: "no"
+    networks:
+      - data
+
+  backend:
+    build:
+      context: ./backend
+    command:
+      [
+        "gunicorn",
+        "config.wsgi:application",
+        "--bind",
+        "0.0.0.0:8000",
+        "--workers",
+        "3",
+        "--timeout",
+        "60",
+        "--access-logfile",
+        "-",
+        "--error-logfile",
+        "-",
+      ]
+    environment:
+      <<: *backend_environment
+      CACHE_URL: redis://cache:6379/1
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+      release:
+        condition: service_completed_successfully
+    volumes:
+      - staticfiles:/app/staticfiles:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=3).read()",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - app
+      - data
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      NODE_ENV: production
+      GUNIAPA_API_BASE_URL: http://backend:8000
+      SESSION_SECRET: ${SESSION_SECRET:?Set a private SESSION_SECRET}
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then((r) => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - app
+
+  nginx:
+    build:
+      context: ./ops/nginx
+    ports:
+      - "${NGINX_BIND_ADDRESS:-127.0.0.1}:${NGINX_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    volumes:
+      - staticfiles:/usr/share/nginx/html/static:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - app
+
+volumes:
+  postgres_data:
+  staticfiles:
+
+networks:
+  app:
+  data:
+    internal: true

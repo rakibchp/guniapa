@@ -10,7 +10,7 @@ Guniapa — Skill at Your Service
 </p>
 
 Guniapa is a planned service marketplace that connects people and organizations who need trusted, on-demand or part-time help with skilled women service providers. The name combines “Guni” (গুণী — skilled/talented) and “Apa” (আপা — sister), expressing respect for the people whose skills keep homes, workplaces and communities running.
-Project status: In development / concept-to-MVP. Features described here are planned and should not be interpreted as already live.
+Project status: MVP implementation in progress. Core authentication, provider onboarding, service requests, quotes, bookings, reviews, support tickets and administrative configuration are implemented in code. The application is not deployed or ready for public launch; see the release blockers below.
 
 Website: https://guniapa.com
 Repository: guniapa
@@ -79,7 +79,7 @@ The first release should be a secure modular application rather than a premature
 - Frontend: React, TypeScript, a responsive UI and accessible components
 - Backend: Python with Django REST Framework or FastAPI (choose one for the MVP; avoid running both without a clear need)
 - Database: PostgreSQL as the source of truth
-- Cache and short-lived coordination: Redis, introduced where measurements justify it
+- Cache and short-lived coordination: Redis for shared API throttles and OTP state across backend workers
 - Background work: Celery with Redis or RabbitMQ, when asynchronous jobs are needed
 - Maps: A map/geocoding provider selected after cost, coverage, privacy and licensing review
 - Authentication: Short-lived access tokens or secure server sessions, refresh-token rotation where applicable, and role/permission checks on the backend
@@ -102,14 +102,15 @@ Phase 1 — Discovery and foundation
 - Validate service categories, fee assumptions and operational workflows
 - Define policies for identity checks, regulated services, cancellations, refunds and disputes
 - Write user stories, acceptance criteria, data model and threat model
-Phase 2 — MVP
-- Authentication and profiles
-- Configurable service categories and provider skills
-- Service request creation and provider acceptance
-- Booking lifecycle and completion confirmation
-- Basic location capture and map handoff
-- Cash payment recording, fee ledger and transaction history
-- Ratings/reviews, admin tools, notifications and audit trail
+Phase 2 — MVP (implementation in progress)
+- Authentication, phone-verification adapter boundary, provider profile review and role-checked APIs
+- Configurable service categories and provider skills, including credential approval gates
+- Customer service requests, provider acceptance and customer-approved quotes
+- Booking lifecycle, completion confirmation, cancellations and status history
+- Cash receipt recording, configurable fee snapshots and append-only fee ledger
+- Moderated reviews, scoped support tickets, notifications and audit events
+- Responsive Next.js customer/provider workflows connected to the API
+- Map handoff, identity document processing, digital payments and live SMS delivery remain unimplemented
 Phase 3 — Controlled pilot
 - Add approved digital payment integrations after provider onboarding and compliance review
 - Improve matching, search, provider availability and customer support
@@ -125,5 +126,6 @@ Phase 4 — Scale when evidence supports it
 Contributions should include a clear problem statement, tests for behavior changes, documentation updates where appropriate, and no secrets or real customer data in commits. Use environment variables or a secret manager for credentials. Follow the repository's contribution and code-review rules as they are added.
 ### - Disclaimer
 
-*Guniapa is a planned marketplace concept. Availability, identity checks, payments, maps, provider credentials, ratings, media uploads and other capabilities must be implemented, tested and reviewed before being represented as operational. The platform should launch only after legal, safety, privacy and payment requirements for its target markets have been reviewed.
->>>>>>> origin/main
+*This repository contains an MVP implementation, not a live marketplace. Production launch is blocked until a real SMS delivery provider and deployment secrets/hosting are configured; legal, safety, privacy, provider credential and fee policies are reviewed; and TLS, backups, restore, monitoring and incident procedures are verified. No digital payment, identity document or map integration is currently available. Do not represent these as operational.*
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment prerequisites and operational procedures and [frontend/README.md](./frontend/README.md) for frontend setup and API integration details.
