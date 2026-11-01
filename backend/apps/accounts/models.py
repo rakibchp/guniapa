@@ -100,3 +100,72 @@ class PhoneOTP(models.Model):
 
     def __str__(self):
         return f"Phone OTP for {self.user.email}"
+
+
+
+class ProviderProfile(models.Model):
+
+    class ApprovalStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending Review"
+        APPROVED = "APPROVED", "Approved"
+        REJECTED = "REJECTED", "Rejected"
+        SUSPENDED = "SUSPENDED", "Suspended"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="provider_profile"
+    )
+
+    professional_title = models.CharField(
+        max_length=150,
+        blank=True
+    )
+
+    bio = models.TextField(
+        blank=True,
+        max_length=1000
+    )
+
+    experience_years = models.PositiveSmallIntegerField(
+        default=0
+    )
+
+    city = models.CharField(
+        max_length=100,
+        blank=True
+    )
+
+    service_area = models.CharField(
+        max_length=255,
+        blank=True
+    )
+
+    service_radius_km = models.PositiveSmallIntegerField(
+        default=5
+    )
+
+    approval_status = models.CharField(
+        max_length=20,
+        choices=ApprovalStatus.choices,
+        default=ApprovalStatus.PENDING
+    )
+
+    is_available = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "provider_profiles"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Provider Profile - {self.user.email}"

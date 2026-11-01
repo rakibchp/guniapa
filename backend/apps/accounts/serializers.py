@@ -5,6 +5,10 @@ from rest_framework import serializers
 from apps.accounts.models import User
 
 
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(
